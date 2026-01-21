@@ -5,6 +5,7 @@ Customize Claude Code's compaction experience by automatically exporting full co
 ## The Problem
 
 When Claude Code compacts your conversation (at ~95% context), the built-in summary often loses critical details:
+
 - File paths and code changes
 - Error messages and debugging steps
 - Architectural decisions and their rationale
@@ -13,6 +14,7 @@ When Claude Code compacts your conversation (at ~95% context), the built-in summ
 ## The Solution
 
 `claude-compact` installs hooks that:
+
 1. **Before compaction**: Export the full conversation to a readable markdown file
 2. **After compaction**: Tell Claude where to find the exported file
 
@@ -22,22 +24,6 @@ Claude can then read the full conversation history when needed, preserving all c
 
 ```bash
 pip install claude-compact
-```
-
-Or install from source:
-
-```bash
-git clone https://github.com/nhphong/claude-compact
-cd claude-code-compact-hook
-pip install -e .
-```
-
-### Dependencies
-
-This tool requires `claude-conversation-extractor` for exporting conversations:
-
-```bash
-pip install claude-conversation-extractor
 ```
 
 ## Quick Start
@@ -72,16 +58,17 @@ claude-compact config reset         # Reset to defaults
 
 **Available settings:**
 
-| Setting | Default | Description |
-|---------|---------|-------------|
-| `export_dir` | `~/.claude/hooks/exports` | Where to save exports |
-| `export_format` | `markdown` | Format: markdown, json, html |
-| `detailed` | `true` | Include tool calls in export |
-| `trigger` | `*` | Hook trigger: `auto`, `manual`, or `*` (both) |
-| `cleanup_enabled` | `true` | Auto-cleanup old exports |
-| `cleanup_mode` | `age` | Cleanup by `age` or `count` |
-| `cleanup_max_age_days` | `30` | Delete exports older than N days |
-| `cleanup_max_count` | `50` | Keep only N most recent exports |
+| Setting                | Default                   | Description                                   |
+| ---------------------- | ------------------------- | --------------------------------------------- |
+| `export_dir`           | `~/.claude/hooks/exports` | Where to save exports                         |
+| `export_format`        | `markdown`                | Format: markdown, json, html                  |
+| `detailed`             | `true`                    | Include tool calls in export                  |
+| `trigger`              | `*`                       | Hook trigger: `auto`, `manual`, or `*` (both) |
+| `cleanup_enabled`      | `true`                    | Auto-cleanup old exports                      |
+| `cleanup_mode`         | `age`                     | Cleanup by `age` or `count`                   |
+| `cleanup_max_age_days` | `30`                      | Delete exports older than N days              |
+| `cleanup_max_count`    | `50`                      | Keep only N most recent exports               |
+| `prompt_template`      | _(see below)_             | Message injected after compaction             |
 
 ### Exports Management
 
@@ -105,6 +92,7 @@ claude-compact prompt reset   # Reset to default
 ```
 
 **Default template:**
+
 ```
 IMPORTANT: This conversation was compacted. The FULL conversation before compaction is saved at:
 {export_path}
@@ -113,6 +101,7 @@ If you need details from earlier in the conversation (file paths, error messages
 ```
 
 **Available variables:**
+
 - `{export_path}` - Full path to the exported file
 - `{session_id}` - Session ID
 - `{timestamp}` - Export timestamp
@@ -156,6 +145,7 @@ pip uninstall claude-compact
 ```
 
 The `uninstall` command removes:
+
 - Hook scripts (`~/.claude/hooks/claude-compact-*.py`)
 - Config file (`~/.claude/hooks/claude-compact-config.json`)
 - Exports folder (`~/.claude/hooks/exports/`)
