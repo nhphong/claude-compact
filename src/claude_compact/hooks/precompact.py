@@ -7,6 +7,7 @@ It uses claude-extract to export the current session to a markdown file.
 """
 
 import json
+import os
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -129,8 +130,10 @@ def main() -> None:
         if detailed:
             cmd.append("--detailed")
 
-        # Run claude-extract
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
+        # Run claude-extract with clean environment (avoid pyenv issues)
+        env = os.environ.copy()
+        env.pop("PYENV_VERSION", None)
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
 
         if result.returncode != 0:
             error_msg = f"claude-extract failed: {result.stderr}"
