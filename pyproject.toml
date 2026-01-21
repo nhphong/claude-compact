@@ -35,8 +35,8 @@ dependencies = [
 claude-compact = "claude_compact.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/phongnguyen/claude-code-compact-hook"
-Repository = "https://github.com/phongnguyen/claude-code-compact-hook"
+Homepage = "https://github.com/nhphong/claude-compact"
+Repository = "https://github.com/nhphong/claude-compact"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/claude_compact"]

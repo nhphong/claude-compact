@@ -27,7 +27,7 @@ pip install claude-compact
 Or install from source:
 
 ```bash
-git clone https://github.com/yourusername/claude-code-compact-hook
+git clone https://github.com/nhphong/claude-compact
 cd claude-code-compact-hook
 pip install -e .
 ```
