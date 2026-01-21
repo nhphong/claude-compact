@@ -58,7 +58,7 @@ claude-compact status
 
 ```bash
 claude-compact install    # Install hooks into Claude Code
-claude-compact uninstall  # Remove hooks
+claude-compact uninstall  # Remove hooks, config, and exports
 claude-compact status     # Check installation status
 ```
 
@@ -148,17 +148,17 @@ The injected context is invisible to you but visible to Claude. Ask Claude: "Do 
 ## Uninstalling
 
 ```bash
-# Remove hooks from Claude Code
+# Remove hooks, config, and exports
 claude-compact uninstall
 
-# Optionally remove the package
+# Remove the package
 pip uninstall claude-compact
-
-# Optionally clean up exports
-rm -rf ~/.claude/hooks/exports
-rm ~/.claude/hooks/claude-compact-*.py
-rm ~/.claude/hooks/claude-compact-config.json
 ```
+
+The `uninstall` command removes:
+- Hook scripts (`~/.claude/hooks/claude-compact-*.py`)
+- Config file (`~/.claude/hooks/claude-compact-config.json`)
+- Exports folder (`~/.claude/hooks/exports/`)
 
 ## License
 

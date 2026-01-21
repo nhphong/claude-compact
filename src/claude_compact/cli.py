@@ -44,7 +44,7 @@ def install():
 
 @main.command()
 def uninstall():
-    """Remove hooks from Claude Code."""
+    """Remove hooks, config, and exports from Claude Code."""
     with console.status("Uninstalling hooks..."):
         success, message = installer.uninstall_hooks()
 

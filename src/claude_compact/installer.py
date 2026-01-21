@@ -143,7 +143,7 @@ def install_hooks() -> tuple[bool, str]:
 
 def uninstall_hooks() -> tuple[bool, str]:
     """
-    Uninstall hooks from Claude Code.
+    Uninstall hooks from Claude Code and clean up all related files.
 
     Returns:
         Tuple of (success, message)
@@ -183,7 +183,21 @@ def uninstall_hooks() -> tuple[bool, str]:
             # Save settings
             save_settings(settings)
 
-        return True, "Hooks uninstalled successfully"
+        # Remove config file
+        if config.CONFIG_FILE.exists():
+            config.CONFIG_FILE.unlink()
+
+        # Remove exports folder
+        export_dir = config.get_export_dir()
+        if export_dir.exists():
+            shutil.rmtree(export_dir)
+
+        # Remove continuation prompt file if exists
+        continuation_file = config.HOOKS_DIR / "continuation_prompt.txt"
+        if continuation_file.exists():
+            continuation_file.unlink()
+
+        return True, "Uninstalled hooks, config, and exports"
 
     except Exception as e:
         return False, f"Uninstallation failed: {e}"
