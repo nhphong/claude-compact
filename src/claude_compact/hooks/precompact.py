@@ -16,6 +16,17 @@ from pathlib import Path
 HOOKS_DIR = Path.home() / ".claude/hooks"
 CONFIG_FILE = HOOKS_DIR / "claude-compact-config.json"
 CONTINUATION_FILE = HOOKS_DIR / "continuation_prompt.txt"
+LOG_FILE = HOOKS_DIR / "claude-compact.log"
+
+
+def log_error(message: str) -> None:
+    """Append error message to log file for debugging."""
+    try:
+        timestamp = datetime.now().isoformat()
+        with open(LOG_FILE, "a") as f:
+            f.write(f"[{timestamp}] [precompact] {message}\n")
+    except IOError:
+        pass
 
 # Defaults
 DEFAULT_EXPORT_DIR = HOOKS_DIR / "exports"
@@ -122,7 +133,9 @@ def main() -> None:
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120)
 
         if result.returncode != 0:
-            print(f"claude-extract failed: {result.stderr}", file=sys.stderr)
+            error_msg = f"claude-extract failed: {result.stderr}"
+            print(error_msg, file=sys.stderr)
+            log_error(error_msg)
             return
 
         # Find the most recent export file
@@ -134,7 +147,9 @@ def main() -> None:
         )
 
         if not export_files:
-            print("No export file created", file=sys.stderr)
+            error_msg = "No export file created"
+            print(error_msg, file=sys.stderr)
+            log_error(error_msg)
             return
 
         export_path = export_files[0]
@@ -150,11 +165,17 @@ def main() -> None:
         print(f"Exported to {export_path}", file=sys.stderr)
 
     except subprocess.TimeoutExpired:
-        print("claude-extract timed out", file=sys.stderr)
+        error_msg = "claude-extract timed out"
+        print(error_msg, file=sys.stderr)
+        log_error(error_msg)
     except FileNotFoundError:
-        print("claude-extract not found. Install with: pip install claude-conversation-extractor", file=sys.stderr)
+        error_msg = "claude-extract not found. Install with: pip install claude-conversation-extractor"
+        print(error_msg, file=sys.stderr)
+        log_error(error_msg)
     except Exception as e:
-        print(f"PreCompact hook error: {e}", file=sys.stderr)
+        error_msg = f"PreCompact hook error: {e}"
+        print(error_msg, file=sys.stderr)
+        log_error(error_msg)
 
 
 if __name__ == "__main__":

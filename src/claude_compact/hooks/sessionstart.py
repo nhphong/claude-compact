@@ -16,6 +16,17 @@ from pathlib import Path
 HOOKS_DIR = Path.home() / ".claude/hooks"
 CONFIG_FILE = HOOKS_DIR / "claude-compact-config.json"
 CONTINUATION_FILE = HOOKS_DIR / "continuation_prompt.txt"
+LOG_FILE = HOOKS_DIR / "claude-compact.log"
+
+
+def log_error(message: str) -> None:
+    """Append error message to log file for debugging."""
+    try:
+        timestamp = datetime.now().isoformat()
+        with open(LOG_FILE, "a") as f:
+            f.write(f"[{timestamp}] [sessionstart] {message}\n")
+    except IOError:
+        pass
 
 # Default prompt template
 DEFAULT_PROMPT_TEMPLATE = """IMPORTANT: This conversation was compacted. The FULL conversation before compaction is saved at:
@@ -64,7 +75,9 @@ def main() -> None:
             timestamp = datetime.now().isoformat()
 
         if not export_path or not Path(export_path).exists():
-            print(f"Export file not found: {export_path}", file=sys.stderr)
+            error_msg = f"Export file not found: {export_path}"
+            print(error_msg, file=sys.stderr)
+            log_error(error_msg)
             CONTINUATION_FILE.unlink(missing_ok=True)
             return
 
@@ -83,7 +96,9 @@ def main() -> None:
         print(message)
 
     except Exception as e:
-        print(f"SessionStart hook error: {e}", file=sys.stderr)
+        error_msg = f"SessionStart hook error: {e}"
+        print(error_msg, file=sys.stderr)
+        log_error(error_msg)
     finally:
         # Always clean up the continuation file
         CONTINUATION_FILE.unlink(missing_ok=True)
