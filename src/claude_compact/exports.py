@@ -22,8 +22,11 @@ def get_exports() -> list[dict]:
     if not export_dir.exists():
         return []
 
+    export_format = config.get_config_value("export_format")
+    pattern = "*.md" if export_format == "markdown" else f"*.{export_format}"
+
     exports = []
-    for f in export_dir.glob("*.md"):
+    for f in export_dir.glob(pattern):
         stat = f.stat()
         exports.append({
             "path": f,

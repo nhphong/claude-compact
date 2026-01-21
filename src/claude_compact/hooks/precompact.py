@@ -58,7 +58,9 @@ def cleanup_exports(config: dict, export_dir: Path) -> None:
     if not export_dir.exists():
         return
 
-    exports = sorted(export_dir.glob("*.md"), key=lambda f: f.stat().st_mtime, reverse=True)
+    export_format = config.get("export_format", "markdown")
+    pattern = "*.md" if export_format == "markdown" else f"*.{export_format}"
+    exports = sorted(export_dir.glob(pattern), key=lambda f: f.stat().st_mtime, reverse=True)
 
     if not exports:
         return

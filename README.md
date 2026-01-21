@@ -119,24 +119,7 @@ If you need details from earlier in the conversation (file paths, error messages
 
 ## How It Works
 
-```
-┌─────────────────────────────────────────────────────────────┐
-│ 1. Context fills up (~95%)                                  │
-├─────────────────────────────────────────────────────────────┤
-│ 2. PreCompact hook fires                                    │
-│    → Runs claude-extract to export full conversation        │
-│    → Saves export path for later                            │
-├─────────────────────────────────────────────────────────────┤
-│ 3. Claude Code compacts (normal behavior)                   │
-├─────────────────────────────────────────────────────────────┤
-│ 4. SessionStart hook fires                                  │
-│    → Outputs continuation prompt to stdout                  │
-│    → Claude sees: "Full conversation saved at <path>"       │
-├─────────────────────────────────────────────────────────────┤
-│ 5. You continue working                                     │
-│    → Claude can read the export file if needed              │
-└─────────────────────────────────────────────────────────────┘
-```
+![How It Works](docs/how-it-works.svg)
 
 ## File Locations
 

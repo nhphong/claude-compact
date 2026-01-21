@@ -9,7 +9,6 @@ CLAUDE_DIR = Path.home() / ".claude"
 HOOKS_DIR = CLAUDE_DIR / "hooks"
 CONFIG_FILE = HOOKS_DIR / "claude-compact-config.json"
 EXPORTS_DIR = HOOKS_DIR / "exports"
-CONTINUATION_FILE = HOOKS_DIR / "continuation_prompt.txt"
 
 # Default prompt template
 DEFAULT_PROMPT_TEMPLATE = """IMPORTANT: This conversation was compacted. The FULL conversation before compaction is saved at:
