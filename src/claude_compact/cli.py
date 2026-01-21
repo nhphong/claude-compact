@@ -1,18 +1,20 @@
 """CLI for claude-compact."""
 
+from importlib.metadata import version
+
 import click
 from rich.console import Console
 from rich.table import Table
 from rich.panel import Panel
 from rich.syntax import Syntax
 
-from . import __version__, config, exports, installer
+from . import config, exports, installer
 
 console = Console()
 
 
 @click.group()
-@click.version_option(version=__version__)
+@click.version_option(version=version("claude-compact"))
 def main():
     """Customize Claude Code's compaction experience.
 
