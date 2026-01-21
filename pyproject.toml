@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "claude-compact"
-version = "0.1.0"
+version = "0.1.1"
 description = "Customize Claude Code's compaction experience with automatic conversation export and context injection"
 readme = "README.md"
 license = "MIT"
