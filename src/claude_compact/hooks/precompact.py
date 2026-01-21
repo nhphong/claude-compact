@@ -8,6 +8,7 @@ It uses claude-extract to export the current session to a markdown file.
 
 import json
 import os
+import shutil
 import subprocess
 import sys
 from datetime import datetime, timedelta
@@ -120,8 +121,23 @@ def main() -> None:
         cleanup_exports(config, export_dir)
 
         # Build claude-extract command
+        # Use a clean environment to avoid pyenv issues:
+        # 1. Remove all PYENV_* env vars
+        # 2. Filter pyenv shims out of PATH so we find the real executable
+        env = {k: v for k, v in os.environ.items() if not k.startswith("PYENV_")}
+        clean_path = os.pathsep.join(
+            p for p in env.get("PATH", "").split(os.pathsep)
+            if ".pyenv/shims" not in p
+        )
+        env["PATH"] = clean_path
+
+        # Find the real path to claude-extract (bypassing pyenv shims)
+        claude_extract_path = shutil.which("claude-extract", path=clean_path)
+        if not claude_extract_path:
+            raise FileNotFoundError("claude-extract not found in PATH")
+
         cmd = [
-            "claude-extract",
+            claude_extract_path,
             "--extract", "1",
             "--format", export_format,
             "--output", str(export_dir),
@@ -130,9 +146,6 @@ def main() -> None:
         if detailed:
             cmd.append("--detailed")
 
-        # Run claude-extract with clean environment (avoid pyenv issues)
-        env = os.environ.copy()
-        env.pop("PYENV_VERSION", None)
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
 
         if result.returncode != 0:
