@@ -139,8 +139,13 @@ def main() -> None:
 
         export_path = export_files[0]
 
-        # Save export path for sessionstart hook
-        CONTINUATION_FILE.write_text(str(export_path))
+        # Save export path, session_id, and timestamp for sessionstart hook
+        continuation_data = json.dumps({
+            "export_path": str(export_path),
+            "session_id": session_id,
+            "timestamp": datetime.now().isoformat(),
+        })
+        CONTINUATION_FILE.write_text(continuation_data)
 
         print(f"Exported to {export_path}", file=sys.stderr)
 

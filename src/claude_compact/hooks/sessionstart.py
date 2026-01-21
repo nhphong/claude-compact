@@ -48,8 +48,20 @@ def main() -> None:
         return
 
     try:
-        # Read the export path
-        export_path = CONTINUATION_FILE.read_text().strip()
+        # Read the continuation data (JSON with export_path and session_id)
+        raw_data = CONTINUATION_FILE.read_text().strip()
+
+        # Handle both old format (plain path) and new format (JSON)
+        try:
+            data = json.loads(raw_data)
+            export_path = data.get("export_path", "")
+            session_id = data.get("session_id", "")
+            timestamp = data.get("timestamp", datetime.now().isoformat())
+        except json.JSONDecodeError:
+            # Fallback for old plain text format
+            export_path = raw_data
+            session_id = ""
+            timestamp = datetime.now().isoformat()
 
         if not export_path or not Path(export_path).exists():
             print(f"Export file not found: {export_path}", file=sys.stderr)
@@ -63,8 +75,8 @@ def main() -> None:
         # Format the message with available variables
         message = template.format(
             export_path=export_path,
-            session_id="",  # Could be extracted if needed
-            timestamp=datetime.now().isoformat(),
+            session_id=session_id,
+            timestamp=timestamp,
         )
 
         # Output to stdout - Claude Code will inject this as context
