@@ -8,6 +8,7 @@ It uses claude-extract to export the current session to a markdown file.
 
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -61,6 +62,46 @@ def load_config() -> dict:
             pass
 
     return config
+
+
+def parse_pyenv_available_versions(error_output: str) -> list[str]:
+    """Parse pyenv error to find Python versions that have the command."""
+    # Look for pattern like:
+    # The `claude-extract' command exists in these Python versions:
+    #   3.11.10
+    #   3.13.0
+    versions = []
+    in_version_list = False
+    for line in error_output.splitlines():
+        if "command exists in these Python versions:" in line:
+            in_version_list = True
+            continue
+        if in_version_list:
+            # Version lines are indented with spaces
+            match = re.match(r"^\s+(\d+\.\d+\.\d+)\s*$", line)
+            if match:
+                versions.append(match.group(1))
+            elif line.strip() and not line.startswith(" "):
+                # End of version list
+                break
+    return versions
+
+
+def run_claude_extract(cmd: list[str], env: dict) -> subprocess.CompletedProcess:
+    """Run claude-extract, retrying with correct pyenv version if needed."""
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
+
+    # Check if this is a pyenv "version not installed" error
+    if result.returncode != 0 and "command exists in these Python versions:" in result.stderr:
+        available_versions = parse_pyenv_available_versions(result.stderr)
+        if available_versions:
+            # Retry with the first available version
+            retry_env = env.copy()
+            retry_env["PYENV_VERSION"] = available_versions[0]
+            log_error(f"Retrying with PYENV_VERSION={available_versions[0]}")
+            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=retry_env)
+
+    return result
 
 
 def cleanup_exports(config: dict, export_dir: Path) -> None:
@@ -121,18 +162,12 @@ def main() -> None:
         cleanup_exports(config, export_dir)
 
         # Build claude-extract command
-        # Use a clean environment to avoid pyenv issues:
-        # 1. Remove all PYENV_* env vars
-        # 2. Filter pyenv shims out of PATH so we find the real executable
+        # Remove PYENV_VERSION to avoid version conflicts, but keep shims in PATH
+        # so we can use pyenv-installed tools
         env = {k: v for k, v in os.environ.items() if not k.startswith("PYENV_")}
-        clean_path = os.pathsep.join(
-            p for p in env.get("PATH", "").split(os.pathsep)
-            if ".pyenv/shims" not in p
-        )
-        env["PATH"] = clean_path
 
-        # Find the real path to claude-extract (bypassing pyenv shims)
-        claude_extract_path = shutil.which("claude-extract", path=clean_path)
+        # Find claude-extract (may be a pyenv shim or real executable)
+        claude_extract_path = shutil.which("claude-extract")
         if not claude_extract_path:
             raise FileNotFoundError("claude-extract not found in PATH")
 
@@ -146,7 +181,7 @@ def main() -> None:
         if detailed:
             cmd.append("--detailed")
 
-        result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
+        result = run_claude_extract(cmd, env)
 
         if result.returncode != 0:
             error_msg = f"claude-extract failed: {result.stderr}"
