@@ -1,0 +1,81 @@
+#!/usr/bin/env python3
+"""
+SessionStart hook: Injects continuation context after compaction.
+
+This script is called by Claude Code after compaction completes.
+It reads the saved export path and outputs a context message to stdout,
+which Claude Code injects as context for Claude to see.
+"""
+
+import json
+import sys
+from datetime import datetime
+from pathlib import Path
+
+# Config paths (must match config.py)
+HOOKS_DIR = Path.home() / ".claude/hooks"
+CONFIG_FILE = HOOKS_DIR / "claude-compact-config.json"
+CONTINUATION_FILE = HOOKS_DIR / "continuation_prompt.txt"
+
+# Default prompt template
+DEFAULT_PROMPT_TEMPLATE = """IMPORTANT: This conversation was compacted. The FULL conversation before compaction is saved at:
+{export_path}
+
+If you need details from earlier in the conversation (file paths, error messages, code changes, tool calls, decisions made, etc.), use the Read tool to read that file."""
+
+
+def load_config() -> dict:
+    """Load configuration."""
+    config = {
+        "prompt_template": DEFAULT_PROMPT_TEMPLATE,
+    }
+
+    if CONFIG_FILE.exists():
+        try:
+            with open(CONFIG_FILE) as f:
+                saved = json.load(f)
+            config.update(saved)
+        except (json.JSONDecodeError, IOError):
+            pass
+
+    return config
+
+
+def main() -> None:
+    """Main hook entry point."""
+    # Check if continuation file exists
+    if not CONTINUATION_FILE.exists():
+        return
+
+    try:
+        # Read the export path
+        export_path = CONTINUATION_FILE.read_text().strip()
+
+        if not export_path or not Path(export_path).exists():
+            print(f"Export file not found: {export_path}", file=sys.stderr)
+            CONTINUATION_FILE.unlink(missing_ok=True)
+            return
+
+        # Load configuration
+        config = load_config()
+        template = config.get("prompt_template", DEFAULT_PROMPT_TEMPLATE)
+
+        # Format the message with available variables
+        message = template.format(
+            export_path=export_path,
+            session_id="",  # Could be extracted if needed
+            timestamp=datetime.now().isoformat(),
+        )
+
+        # Output to stdout - Claude Code will inject this as context
+        print(message)
+
+    except Exception as e:
+        print(f"SessionStart hook error: {e}", file=sys.stderr)
+    finally:
+        # Always clean up the continuation file
+        CONTINUATION_FILE.unlink(missing_ok=True)
+
+
+if __name__ == "__main__":
+    main()

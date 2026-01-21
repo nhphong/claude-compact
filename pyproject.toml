@@ -1,0 +1,42 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "claude-compact"
+version = "0.1.0"
+description = "Customize Claude Code's compaction experience with automatic conversation export and context injection"
+readme = "README.md"
+license = "MIT"
+requires-python = ">=3.9"
+authors = [
+    { name = "Phong Nguyen" }
+]
+keywords = ["claude", "claude-code", "compaction", "hooks", "cli"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "click>=8.1",
+    "rich>=13.0",
+    "claude-conversation-extractor>=1.1",
+]
+
+[project.scripts]
+claude-compact = "claude_compact.cli:main"
+
+[project.urls]
+Homepage = "https://github.com/phongnguyen/claude-code-compact-hook"
+Repository = "https://github.com/phongnguyen/claude-code-compact-hook"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/claude_compact"]
