@@ -106,7 +106,7 @@ def config_show():
         "export_dir": "Directory for exports",
         "export_format": "Export format (markdown/json/html)",
         "detailed": "Include tool calls in export",
-        "trigger": "Hook trigger (auto/manual/*)",
+        "trigger": "Hook trigger (auto/manual/both)",
         "cleanup_enabled": "Enable auto-cleanup",
         "cleanup_mode": "Cleanup mode (age/count)",
         "cleanup_max_age_days": "Max age in days (if mode=age)",

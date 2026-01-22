@@ -21,7 +21,7 @@ DEFAULT_CONFIG = {
     "export_dir": str(EXPORTS_DIR),
     "export_format": "markdown",
     "detailed": True,
-    "trigger": "*",
+    "trigger": "both",
     "cleanup_enabled": True,
     "cleanup_mode": "age",
     "cleanup_max_age_days": 30,

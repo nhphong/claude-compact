@@ -46,23 +46,37 @@ def save_settings(settings: dict) -> None:
         json.dump(settings, f, indent=2)
 
 
-def get_hook_config(trigger: str = "*") -> dict:
-    """Generate hook configuration for settings.json."""
+def get_hook_config(trigger: str = "both") -> dict:
+    """Generate hook configuration for settings.json.
+
+    Args:
+        trigger: "auto", "manual", or "both" (default)
+    """
     precompact_path = config.HOOKS_DIR / PRECOMPACT_HOOK
     sessionstart_path = config.HOOKS_DIR / SESSIONSTART_HOOK
 
-    return {
-        "PreCompact": [
+    # Build PreCompact entries based on trigger
+    if trigger == "both":
+        precompact_entries = [
+            {
+                "matcher": "auto",
+                "hooks": [{"type": "command", "command": str(precompact_path)}],
+            },
+            {
+                "matcher": "manual",
+                "hooks": [{"type": "command", "command": str(precompact_path)}],
+            },
+        ]
+    else:
+        precompact_entries = [
             {
                 "matcher": trigger,
-                "hooks": [
-                    {
-                        "type": "command",
-                        "command": str(precompact_path),
-                    }
-                ],
+                "hooks": [{"type": "command", "command": str(precompact_path)}],
             }
-        ],
+        ]
+
+    return {
+        "PreCompact": precompact_entries,
         "SessionStart": [
             {
                 "matcher": "compact",
