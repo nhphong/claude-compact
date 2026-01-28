@@ -3,14 +3,11 @@
 PreCompact hook: Exports the full conversation before compaction.
 
 This script is called by Claude Code before compaction occurs.
-It uses claude-extract to export the current session to a markdown file.
+It uses the claude-conversation-extractor library to export the current
+session to a markdown file.
 """
 
 import json
-import os
-import re
-import shutil
-import subprocess
 import sys
 from datetime import datetime, timedelta
 from pathlib import Path
@@ -30,6 +27,7 @@ def log_error(message: str) -> None:
             f.write(f"[{timestamp}] [precompact] {message}\n")
     except IOError:
         pass
+
 
 # Defaults
 DEFAULT_EXPORT_DIR = HOOKS_DIR / "exports"
@@ -62,46 +60,6 @@ def load_config() -> dict:
             pass
 
     return config
-
-
-def parse_pyenv_available_versions(error_output: str) -> list[str]:
-    """Parse pyenv error to find Python versions that have the command."""
-    # Look for pattern like:
-    # The `claude-extract' command exists in these Python versions:
-    #   3.11.10
-    #   3.13.0
-    versions = []
-    in_version_list = False
-    for line in error_output.splitlines():
-        if "command exists in these Python versions:" in line:
-            in_version_list = True
-            continue
-        if in_version_list:
-            # Version lines are indented with spaces
-            match = re.match(r"^\s+(\d+\.\d+\.\d+)\s*$", line)
-            if match:
-                versions.append(match.group(1))
-            elif line.strip() and not line.startswith(" "):
-                # End of version list
-                break
-    return versions
-
-
-def run_claude_extract(cmd: list[str], env: dict) -> subprocess.CompletedProcess:
-    """Run claude-extract, retrying with correct pyenv version if needed."""
-    result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=env)
-
-    # Check if this is a pyenv "version not installed" error
-    if result.returncode != 0 and "command exists in these Python versions:" in result.stderr:
-        available_versions = parse_pyenv_available_versions(result.stderr)
-        if available_versions:
-            # Retry with the first available version
-            retry_env = env.copy()
-            retry_env["PYENV_VERSION"] = available_versions[0]
-            log_error(f"Retrying with PYENV_VERSION={available_versions[0]}")
-            result = subprocess.run(cmd, capture_output=True, text=True, timeout=120, env=retry_env)
-
-    return result
 
 
 def cleanup_exports(config: dict, export_dir: Path) -> None:
@@ -161,49 +119,45 @@ def main() -> None:
         # Run cleanup before export
         cleanup_exports(config, export_dir)
 
-        # Build claude-extract command
-        # Remove PYENV_VERSION to avoid version conflicts, but keep shims in PATH
-        # so we can use pyenv-installed tools
-        env = {k: v for k, v in os.environ.items() if not k.startswith("PYENV_")}
+        # Import here so ImportError is caught by the exception handler
+        from extract_claude_logs import ClaudeConversationExtractor
 
-        # Find claude-extract (may be a pyenv shim or real executable)
-        claude_extract_path = shutil.which("claude-extract")
-        if not claude_extract_path:
-            raise FileNotFoundError("claude-extract not found in PATH")
+        # Use the library directly instead of shelling out to claude-extract
+        extractor = ClaudeConversationExtractor(output_dir=export_dir)
 
-        cmd = [
-            claude_extract_path,
-            "--extract", "1",
-            "--format", export_format,
-            "--output", str(export_dir),
-        ]
-
-        if detailed:
-            cmd.append("--detailed")
-
-        result = run_claude_extract(cmd, env)
-
-        if result.returncode != 0:
-            error_msg = f"claude-extract failed: {result.stderr}"
+        # Get the most recent session
+        sessions = extractor.list_recent_sessions(limit=1)
+        if not sessions:
+            error_msg = "No sessions found to export"
             print(error_msg, file=sys.stderr)
             log_error(error_msg)
             return
 
-        # Find the most recent export file
-        pattern = "*.md" if export_format == "markdown" else f"*.{export_format}"
-        export_files = sorted(
-            export_dir.glob(pattern),
-            key=lambda f: f.stat().st_mtime,
-            reverse=True
+        session_path = sessions[0]
+
+        # Extract the conversation
+        conversation = extractor.extract_conversation(session_path, detailed=detailed)
+        if not conversation:
+            error_msg = "No conversation content found"
+            print(error_msg, file=sys.stderr)
+            log_error(error_msg)
+            return
+
+        # Get session ID from the path
+        extracted_session_id = session_path.parent.name
+
+        # Save the conversation
+        export_path = extractor.save_conversation(
+            conversation,
+            extracted_session_id,
+            format=export_format
         )
 
-        if not export_files:
-            error_msg = "No export file created"
+        if not export_path:
+            error_msg = "Failed to save conversation"
             print(error_msg, file=sys.stderr)
             log_error(error_msg)
             return
-
-        export_path = export_files[0]
 
         # Save export path, session_id, and timestamp for sessionstart hook
         continuation_data = json.dumps({
@@ -215,12 +169,8 @@ def main() -> None:
 
         print(f"Exported to {export_path}", file=sys.stderr)
 
-    except subprocess.TimeoutExpired:
-        error_msg = "claude-extract timed out"
-        print(error_msg, file=sys.stderr)
-        log_error(error_msg)
-    except FileNotFoundError:
-        error_msg = "claude-extract not found. Install with: pip install claude-conversation-extractor"
+    except ImportError:
+        error_msg = "extract_claude_logs not found. Install with: pip install claude-conversation-extractor"
         print(error_msg, file=sys.stderr)
         log_error(error_msg)
     except Exception as e:

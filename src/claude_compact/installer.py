@@ -2,6 +2,7 @@
 
 import json
 import shutil
+import sys
 from pathlib import Path
 
 from . import config
@@ -26,6 +27,21 @@ def get_hook_dest_paths() -> tuple[Path, Path]:
         config.HOOKS_DIR / PRECOMPACT_HOOK,
         config.HOOKS_DIR / SESSIONSTART_HOOK,
     )
+
+
+def install_hook_with_python_path(src: Path, dest: Path) -> None:
+    """Copy hook file with shebang replaced to use absolute Python path.
+
+    This ensures the hook runs with the same Python that has claude-compact
+    and its dependencies installed.
+    """
+    content = src.read_text()
+
+    # Replace generic shebang with absolute Python path
+    python_path = sys.executable
+    content = content.replace("#!/usr/bin/env python3", f"#!{python_path}", 1)
+
+    dest.write_text(content)
 
 
 def load_settings() -> dict:
@@ -102,12 +118,12 @@ def install_hooks() -> tuple[bool, str]:
         # Ensure directories exist
         config.ensure_dirs()
 
-        # Copy hook scripts
+        # Copy hook scripts with absolute Python path in shebang
         precompact_src, sessionstart_src = get_hook_source_paths()
         precompact_dest, sessionstart_dest = get_hook_dest_paths()
 
-        shutil.copy2(precompact_src, precompact_dest)
-        shutil.copy2(sessionstart_src, sessionstart_dest)
+        install_hook_with_python_path(precompact_src, precompact_dest)
+        install_hook_with_python_path(sessionstart_src, sessionstart_dest)
 
         # Make hooks executable
         precompact_dest.chmod(0o755)

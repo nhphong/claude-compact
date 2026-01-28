@@ -63,7 +63,7 @@ claude-compact config reset         # Reset to defaults
 | `export_dir`           | `~/.claude/hooks/exports` | Where to save exports                         |
 | `export_format`        | `markdown`                | Format: markdown, json, html                  |
 | `detailed`             | `true`                    | Include tool calls in export                  |
-| `trigger`              | `*`                       | Hook trigger: `auto`, `manual`, or `*` (both) |
+| `trigger`              | `both`                    | Hook trigger: `auto`, `manual`, or `both`     |
 | `cleanup_enabled`      | `true`                    | Auto-cleanup old exports                      |
 | `cleanup_mode`         | `age`                     | Cleanup by `age` or `count`                   |
 | `cleanup_max_age_days` | `30`                      | Delete exports older than N days              |
